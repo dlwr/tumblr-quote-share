@@ -59,13 +59,15 @@
       "id": "3f342494-80a2-4b89-a193-c67d4f0f6d3a",
       "key": "tumblr_blog",
       "type": "constant",
-      "value": ""
+      "value": "",
+      "isExcludeValueFromExport": true
     },
     {
       "id": "31e09992-cf35-4b58-8023-dad5333979e8",
       "key": "tumblr_post_state",
       "type": "constant",
-      "value": "draft"
+      "value": "draft",
+      "isExcludeValueFromExport": true
     },
     {
       "id": "f2975d8f-3c9b-4694-9316-8ab6a012c948",
