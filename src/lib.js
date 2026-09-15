@@ -74,6 +74,28 @@ function buildSource(url, title) {
   return '<a href="' + escapeHtml(url) + '">' + escapeHtml(label) + "</a>";
 }
 
+var REFRESH_MARGIN_MS = 60 * 1000;
+
+function tokenIsExpired(expiresAt, now) {
+  var t = parseInt(expiresAt, 10);
+  if (isNaN(t)) return true;
+  return now >= t - REFRESH_MARGIN_MS;
+}
+
+function tokenUpdateFromResponse(json, now, currentRefreshToken) {
+  return {
+    accessToken: json.access_token,
+    refreshToken: json.refresh_token || currentRefreshToken,
+    expiresAt: String(now + json.expires_in * 1000),
+  };
+}
+
+function buildQuoteBody(quote, source, state) {
+  var body = { type: "quote", quote: escapeHtml(quote), state: state };
+  if (source) body.source = source;
+  return body;
+}
+
 if (typeof module !== "undefined") {
   module.exports = {
     parseShared: parseShared,
@@ -82,5 +104,8 @@ if (typeof module !== "undefined") {
     hostOf: hostOf,
     extractTitle: extractTitle,
     buildSource: buildSource,
+    tokenIsExpired: tokenIsExpired,
+    tokenUpdateFromResponse: tokenUpdateFromResponse,
+    buildQuoteBody: buildQuoteBody,
   };
 }

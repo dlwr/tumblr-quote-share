@@ -1,7 +1,7 @@
 "use strict";
 const { test } = require("node:test");
 const assert = require("node:assert/strict");
-const { parseShared, escapeHtml, stripFragment, hostOf, extractTitle, buildSource } = require("../src/lib.js");
+const { parseShared, escapeHtml, stripFragment, hostOf, extractTitle, buildSource, tokenIsExpired, tokenUpdateFromResponse, buildQuoteBody } = require("../src/lib.js");
 
 test("parseShared: Chrome 形式（引用符付き本文 + 改行 + text fragment URL）", () => {
   const text = '"あれま、挨拶もないのかい？"\n\nhttps://sizu.me/suyhnc/posts/kccfz2ur0nt6#:~:text=%E3%81%82%E3%82%8C%E3%81%BE';
@@ -91,4 +91,38 @@ test("buildSource: タイトルと URL をエスケープする", () => {
 
 test("buildSource: URL が無ければ空文字", () => {
   assert.equal(buildSource("", "title"), "");
+});
+
+test("tokenIsExpired: 空なら期限切れ扱い", () => {
+  assert.equal(tokenIsExpired("", 1000), true);
+  assert.equal(tokenIsExpired("abc", 1000), true);
+});
+
+test("tokenIsExpired: 期限 60 秒前から切れ扱い", () => {
+  assert.equal(tokenIsExpired("1000000", 1000000 - 60001), false);
+  assert.equal(tokenIsExpired("1000000", 1000000 - 60000), true);
+  assert.equal(tokenIsExpired("1000000", 1000000), true);
+});
+
+test("tokenUpdateFromResponse: 新しいトークンと期限を返す", () => {
+  const r = tokenUpdateFromResponse({ access_token: "A", refresh_token: "R", expires_in: 2520 }, 1000, "OLD");
+  assert.deepEqual(r, { accessToken: "A", refreshToken: "R", expiresAt: String(1000 + 2520 * 1000) });
+});
+
+test("tokenUpdateFromResponse: refresh_token が無ければ現状維持", () => {
+  const r = tokenUpdateFromResponse({ access_token: "A", expires_in: 10 }, 0, "OLD");
+  assert.equal(r.refreshToken, "OLD");
+});
+
+test("buildQuoteBody: quote はエスケープし source は生の HTML", () => {
+  assert.deepEqual(buildQuoteBody("a <b> & c", '<a href="u">t</a>', "draft"), {
+    type: "quote",
+    quote: "a &lt;b&gt; &amp; c",
+    source: '<a href="u">t</a>',
+    state: "draft",
+  });
+});
+
+test("buildQuoteBody: source が空ならキーを含めない", () => {
+  assert.deepEqual(buildQuoteBody("a", "", "published"), { type: "quote", quote: "a", state: "published" });
 });
