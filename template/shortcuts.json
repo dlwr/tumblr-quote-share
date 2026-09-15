@@ -38,8 +38,8 @@
   "variables": [
     { "id": "04640043-3af6-4249-b6a9-e0039ecbca67", "key": "shared_text", "type": "constant", "value": "", "isShareText": true, "isExcludeValueFromExport": true },
     { "id": "64cf3d1a-45db-4ebd-99b6-877c103c77dd", "key": "shared_title", "type": "constant", "value": "", "isShareTitle": true, "isExcludeValueFromExport": true },
-    { "id": "3f342494-80a2-4b89-a193-c67d4f0f6d3a", "key": "tumblr_blog", "type": "constant", "value": "" },
-    { "id": "31e09992-cf35-4b58-8023-dad5333979e8", "key": "tumblr_post_state", "type": "constant", "value": "draft" },
+    { "id": "3f342494-80a2-4b89-a193-c67d4f0f6d3a", "key": "tumblr_blog", "type": "constant", "value": "", "isExcludeValueFromExport": true },
+    { "id": "31e09992-cf35-4b58-8023-dad5333979e8", "key": "tumblr_post_state", "type": "constant", "value": "draft", "isExcludeValueFromExport": true },
     { "id": "f2975d8f-3c9b-4694-9316-8ab6a012c948", "key": "tumblr_client_id", "type": "constant", "value": "", "isSecret": true, "isExcludeValueFromExport": true },
     { "id": "fceefa14-3c0f-4643-b171-390fad8cfd85", "key": "tumblr_client_secret", "type": "constant", "value": "", "isSecret": true, "isExcludeValueFromExport": true },
     { "id": "ae1e0a9b-b6b0-4a02-b6fe-6918e78dc947", "key": "tumblr_access_token", "type": "constant", "value": "", "isSecret": true, "isExcludeValueFromExport": true },

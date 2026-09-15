@@ -54,3 +54,10 @@ test("build: コミット済み shortcuts.json はビルド結果と一致する
   const committed = fs.readFileSync(path.join(__dirname, "../shortcuts.json"), "utf8");
   assert.equal(committed, build());
 });
+
+test("build: 全変数が再インポートで既存の値を保つ設定になっている", () => {
+  const json = JSON.parse(build());
+  for (const v of json.variables) {
+    assert.equal(v.isExcludeValueFromExport, true, v.key);
+  }
+});
