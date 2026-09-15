@@ -1,0 +1,117 @@
+{
+  "version": 91,
+  "compatibilityVersion": 90,
+  "categories": [
+    {
+      "id": "5c642d78-61fb-4646-a29d-527ccdd11576",
+      "name": "Tumblr",
+      "shortcuts": [
+        {
+          "id": "9547bc00-a312-4ca7-b73e-ac5ab1783b3f",
+          "executionType": "app",
+          "name": "Tumblr Quote",
+          "description": "共有した選択テキストを Tumblr の quote 投稿にする",
+          "iconName": "flat_grey_quote",
+          "method": "POST",
+          "url": "https://api.tumblr.com/v2/blog/{{tumblr_blog}}/post",
+          "requestBodyType": "custom_text",
+          "contentType": "application/json",
+          "bodyContent": "{{post_body}}",
+          "headers": [
+            {
+              "key": "Authorization",
+              "value": "Bearer {{tumblr_access_token}}"
+            }
+          ],
+          "waitForInternet": true,
+          "launcherShortcut": true,
+          "secondaryLauncherShortcut": true,
+          "responseHandling": {
+            "uiType": "toast",
+            "successOutput": "none",
+            "failureOutput": "none"
+          },
+          "codeOnPrepare": "\"use strict\";\n\nvar TRAILING_URL = /\\s*(https?:\\/\\/\\S+)\\s*$/;\n\nfunction stripQuotePair(s) {\n  var pairs = [['\"', '\"'], [\"“\", \"”\"]];\n  for (var i = 0; i < pairs.length; i++) {\n    var open = pairs[i][0];\n    var close = pairs[i][1];\n    if (s.length >= 2 && s.charAt(0) === open && s.charAt(s.length - 1) === close) {\n      return s.slice(1, -1);\n    }\n  }\n  return s;\n}\n\nfunction parseShared(text, subject) {\n  var body = String(text || \"\");\n  var url = \"\";\n  var m = TRAILING_URL.exec(body);\n  if (m) {\n    url = m[1];\n    body = body.slice(0, m.index);\n  }\n  var quote = stripQuotePair(body.trim()).trim();\n  return {\n    quote: quote,\n    url: url,\n    subject: String(subject || \"\").trim(),\n  };\n}\n\nfunction escapeHtml(s) {\n  return String(s)\n    .replace(/&/g, \"&amp;\")\n    .replace(/</g, \"&lt;\")\n    .replace(/>/g, \"&gt;\")\n    .replace(/\"/g, \"&quot;\")\n    .replace(/'/g, \"&#39;\");\n}\n\nfunction stripFragment(url) {\n  var i = url.indexOf(\"#\");\n  return i === -1 ? url : url.slice(0, i);\n}\n\nfunction hostOf(url) {\n  var m = /^https?:\\/\\/([^\\/?#:]+)/i.exec(url);\n  return m ? m[1] : \"\";\n}\n\nvar NAMED_ENTITIES = { amp: \"&\", lt: \"<\", gt: \">\", quot: '\"', apos: \"'\", nbsp: \" \" };\n\nfunction decodeEntities(s) {\n  return s.replace(/&(#x[0-9a-f]+|#[0-9]+|[a-z]+);/gi, function (all, code) {\n    var lower = code.toLowerCase();\n    if (lower.charAt(0) === \"#\") {\n      var n = lower.charAt(1) === \"x\" ? parseInt(lower.slice(2), 16) : parseInt(lower.slice(1), 10);\n      return isNaN(n) ? all : String.fromCodePoint(n);\n    }\n    return NAMED_ENTITIES.hasOwnProperty(lower) ? NAMED_ENTITIES[lower] : all;\n  });\n}\n\nfunction extractTitle(html) {\n  var m = /<title[^>]*>([\\s\\S]*?)<\\/title>/i.exec(String(html || \"\"));\n  if (!m) return \"\";\n  return decodeEntities(m[1]).replace(/\\s+/g, \" \").trim();\n}\n\nfunction buildSource(url, title) {\n  if (!url) return \"\";\n  var label = title || hostOf(url);\n  return '<a href=\"' + escapeHtml(url) + '\">' + escapeHtml(label) + \"</a>\";\n}\n\nvar REFRESH_MARGIN_MS = 60 * 1000;\n\nfunction tokenIsExpired(expiresAt, now) {\n  var t = parseInt(expiresAt, 10);\n  if (isNaN(t)) return true;\n  return now >= t - REFRESH_MARGIN_MS;\n}\n\nfunction tokenUpdateFromResponse(json, now, currentRefreshToken) {\n  return {\n    accessToken: json.access_token,\n    refreshToken: json.refresh_token || currentRefreshToken,\n    expiresAt: String(now + json.expires_in * 1000),\n  };\n}\n\nfunction buildQuoteBody(quote, source, state) {\n  var body = { type: \"quote\", quote: escapeHtml(quote), state: state };\n  if (source) body.source = source;\n  return body;\n}\n\nif (typeof module !== \"undefined\") {\n  module.exports = {\n    parseShared: parseShared,\n    escapeHtml: escapeHtml,\n    stripFragment: stripFragment,\n    hostOf: hostOf,\n    extractTitle: extractTitle,\n    buildSource: buildSource,\n    tokenIsExpired: tokenIsExpired,\n    tokenUpdateFromResponse: tokenUpdateFromResponse,\n    buildQuoteBody: buildQuoteBody,\n  };\n}\n\nvar TOKEN_URL = \"https://api.tumblr.com/v2/oauth2/token\";\n\nfunction pendingText(p) {\n  return p.url ? p.quote + \"\\n\" + p.url : p.quote;\n}\n\nfunction failAndAbort(message, pending) {\n  if (pending) copyToClipboard(pendingText(pending));\n  showToast(message);\n  abort();\n}\n\nfunction loadPending() {\n  var sharedText = getVariable(\"shared_text\");\n  if (sharedText.trim() !== \"\") {\n    var parsed = parseShared(sharedText, getVariable(\"shared_title\"));\n    setVariable(\"tumblr_pending\", JSON.stringify(parsed));\n    return parsed;\n  }\n  var raw = getVariable(\"tumblr_pending\");\n  return raw ? JSON.parse(raw) : null;\n}\n\nfunction refreshTokenIfNeeded(pending) {\n  if (!tokenIsExpired(getVariable(\"tumblr_token_expires_at\"), Date.now())) return;\n  var result = sendHttpRequest(TOKEN_URL, {\n    method: \"POST\",\n    formData: {\n      grant_type: \"refresh_token\",\n      refresh_token: getVariable(\"tumblr_refresh_token\"),\n      client_id: getVariable(\"tumblr_client_id\"),\n      client_secret: getVariable(\"tumblr_client_secret\"),\n    },\n  });\n  if (result.status === \"success\") {\n    var t = tokenUpdateFromResponse(JSON.parse(result.response.body), Date.now(), getVariable(\"tumblr_refresh_token\"));\n    setVariable(\"tumblr_access_token\", t.accessToken);\n    setVariable(\"tumblr_refresh_token\", t.refreshToken);\n    setVariable(\"tumblr_token_expires_at\", t.expiresAt);\n    return;\n  }\n  if (result.status === \"httpError\") {\n    failAndAbort(\"トークン更新失敗 \" + result.response.statusCode + \" \" + String(result.response.body).slice(0, 60), pending);\n  }\n}\n\nfunction resolveTitle(pending) {\n  if (pending.subject) return pending.subject;\n  if (!pending.url) return \"\";\n  var result = sendHttpRequest(stripFragment(pending.url), { method: \"GET\" });\n  return result.status === \"success\" ? extractTitle(result.response.body) : \"\";\n}\n\nvar pending = loadPending();\nif (!pending || !pending.quote) {\n  failAndAbort(\"引用する本文がありません\", null);\n}\nrefreshTokenIfNeeded(pending);\nvar source = buildSource(pending.url, resolveTitle(pending));\nsetVariable(\"post_body\", JSON.stringify(buildQuoteBody(pending.quote, source, getVariable(\"tumblr_post_state\"))));\n",
+          "codeOnSuccess": "setVariable(\"tumblr_pending\", \"\");\nshowToast(\"Tumblr に投稿しました\");\n",
+          "codeOnFailure": "var raw = getVariable(\"tumblr_pending\");\nif (raw) {\n  var p = JSON.parse(raw);\n  copyToClipboard(p.url ? p.quote + \"\\n\" + p.url : p.quote);\n}\nif (response) {\n  showToast(\"Tumblr \" + response.statusCode + \" \" + String(response.body).slice(0, 60));\n} else {\n  showToast(\"通信エラー \" + networkError);\n}\n"
+        }
+      ]
+    }
+  ],
+  "variables": [
+    {
+      "id": "04640043-3af6-4249-b6a9-e0039ecbca67",
+      "key": "shared_text",
+      "type": "constant",
+      "value": "",
+      "isShareText": true,
+      "isExcludeValueFromExport": true
+    },
+    {
+      "id": "64cf3d1a-45db-4ebd-99b6-877c103c77dd",
+      "key": "shared_title",
+      "type": "constant",
+      "value": "",
+      "isShareTitle": true,
+      "isExcludeValueFromExport": true
+    },
+    {
+      "id": "3f342494-80a2-4b89-a193-c67d4f0f6d3a",
+      "key": "tumblr_blog",
+      "type": "constant",
+      "value": ""
+    },
+    {
+      "id": "31e09992-cf35-4b58-8023-dad5333979e8",
+      "key": "tumblr_post_state",
+      "type": "constant",
+      "value": "draft"
+    },
+    {
+      "id": "f2975d8f-3c9b-4694-9316-8ab6a012c948",
+      "key": "tumblr_client_id",
+      "type": "constant",
+      "value": "",
+      "isSecret": true,
+      "isExcludeValueFromExport": true
+    },
+    {
+      "id": "fceefa14-3c0f-4643-b171-390fad8cfd85",
+      "key": "tumblr_client_secret",
+      "type": "constant",
+      "value": "",
+      "isSecret": true,
+      "isExcludeValueFromExport": true
+    },
+    {
+      "id": "ae1e0a9b-b6b0-4a02-b6fe-6918e78dc947",
+      "key": "tumblr_access_token",
+      "type": "constant",
+      "value": "",
+      "isSecret": true,
+      "isExcludeValueFromExport": true
+    },
+    {
+      "id": "2dffd4c4-74e7-445e-9e7b-43ab537ce520",
+      "key": "tumblr_refresh_token",
+      "type": "constant",
+      "value": "",
+      "isSecret": true,
+      "isExcludeValueFromExport": true
+    },
+    {
+      "id": "0571ae49-c046-4c64-b257-eacd6ac4f412",
+      "key": "tumblr_token_expires_at",
+      "type": "constant",
+      "value": "",
+      "isExcludeValueFromExport": true
+    },
+    {
+      "id": "c9292671-c81c-46c9-aa2f-13c67c2cb257",
+      "key": "tumblr_pending",
+      "type": "constant",
+      "value": "",
+      "isExcludeValueFromExport": true
+    }
+  ]
+}
