@@ -1,0 +1,50 @@
+{
+  "version": 91,
+  "compatibilityVersion": 90,
+  "categories": [
+    {
+      "id": "5c642d78-61fb-4646-a29d-527ccdd11576",
+      "name": "Tumblr",
+      "shortcuts": [
+        {
+          "id": "9547bc00-a312-4ca7-b73e-ac5ab1783b3f",
+          "executionType": "app",
+          "name": "Tumblr Quote",
+          "description": "共有した選択テキストを Tumblr の quote 投稿にする",
+          "iconName": "flat_grey_quote",
+          "method": "POST",
+          "url": "https://api.tumblr.com/v2/blog/{{tumblr_blog}}/post",
+          "requestBodyType": "custom_text",
+          "contentType": "application/json",
+          "bodyContent": "{{post_body}}",
+          "headers": [
+            { "key": "Authorization", "value": "Bearer {{tumblr_access_token}}" }
+          ],
+          "waitForInternet": true,
+          "launcherShortcut": true,
+          "secondaryLauncherShortcut": true,
+          "responseHandling": {
+            "uiType": "toast",
+            "successOutput": "none",
+            "failureOutput": "none"
+          },
+          "codeOnPrepare": "",
+          "codeOnSuccess": "",
+          "codeOnFailure": ""
+        }
+      ]
+    }
+  ],
+  "variables": [
+    { "id": "04640043-3af6-4249-b6a9-e0039ecbca67", "key": "shared_text", "type": "constant", "value": "", "isShareText": true, "isExcludeValueFromExport": true },
+    { "id": "64cf3d1a-45db-4ebd-99b6-877c103c77dd", "key": "shared_title", "type": "constant", "value": "", "isShareTitle": true, "isExcludeValueFromExport": true },
+    { "id": "3f342494-80a2-4b89-a193-c67d4f0f6d3a", "key": "tumblr_blog", "type": "constant", "value": "" },
+    { "id": "31e09992-cf35-4b58-8023-dad5333979e8", "key": "tumblr_post_state", "type": "constant", "value": "draft" },
+    { "id": "f2975d8f-3c9b-4694-9316-8ab6a012c948", "key": "tumblr_client_id", "type": "constant", "value": "", "isSecret": true, "isExcludeValueFromExport": true },
+    { "id": "fceefa14-3c0f-4643-b171-390fad8cfd85", "key": "tumblr_client_secret", "type": "constant", "value": "", "isSecret": true, "isExcludeValueFromExport": true },
+    { "id": "ae1e0a9b-b6b0-4a02-b6fe-6918e78dc947", "key": "tumblr_access_token", "type": "constant", "value": "", "isSecret": true, "isExcludeValueFromExport": true },
+    { "id": "2dffd4c4-74e7-445e-9e7b-43ab537ce520", "key": "tumblr_refresh_token", "type": "constant", "value": "", "isSecret": true, "isExcludeValueFromExport": true },
+    { "id": "0571ae49-c046-4c64-b257-eacd6ac4f412", "key": "tumblr_token_expires_at", "type": "constant", "value": "", "isExcludeValueFromExport": true },
+    { "id": "c9292671-c81c-46c9-aa2f-13c67c2cb257", "key": "tumblr_pending", "type": "constant", "value": "", "isExcludeValueFromExport": true }
+  ]
+}
