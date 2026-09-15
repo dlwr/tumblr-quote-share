@@ -1,7 +1,7 @@
 "use strict";
 const { test } = require("node:test");
 const assert = require("node:assert/strict");
-const { parseShared, escapeHtml, stripFragment, hostOf, extractTitle, buildSource, tokenIsExpired, tokenUpdateFromResponse, buildQuoteBody } = require("../src/lib.js");
+const { parseShared, escapeHtml, stripFragment, hostOf, extractTitle, buildSource, tokenIsExpired, tokenUpdateFromResponse, buildQuoteBody, usableSubject } = require("../src/lib.js");
 
 test("parseShared: Chrome 形式（引用符付き本文 + 改行 + text fragment URL）", () => {
   const text = '"あれま、挨拶もないのかい？"\n\nhttps://sizu.me/suyhnc/posts/kccfz2ur0nt6#:~:text=%E3%81%82%E3%82%8C%E3%81%BE';
@@ -134,4 +134,14 @@ test("extractTitle: 範囲外の数値文字参照はそのまま残し例外を
 test("buildSource: http(s) 以外の URL はリンクにしない", () => {
   assert.equal(buildSource("javascript:alert(1)", "t"), "");
   assert.equal(buildSource("ftp://example.com/a", "t"), "");
+});
+
+test("usableSubject: URL を含む subject は捨てる", () => {
+  assert.equal(usableSubject("リンク: https://ishicoro.substack.com/ を含む"), "");
+  assert.equal(usableSubject("http://example.com"), "");
+});
+
+test("usableSubject: 普通のタイトルはそのまま", () => {
+  assert.equal(usableSubject("08月10日（月）｜静かな生活"), "08月10日（月）｜静かな生活");
+  assert.equal(usableSubject(""), "");
 });

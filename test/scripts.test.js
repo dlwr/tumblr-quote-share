@@ -175,3 +175,12 @@ test("failure: ネットワークエラーは networkError を Toast する", ()
   assert.match(env.calls.toasts[0], /Unable to resolve host/);
   assert.equal(env.calls.clipboard.length, 0);
 });
+
+test("before: subject が URL を含むなら捨ててページの title を使う", () => {
+  const env = makeEnv(
+    { ...BASE_VARS, shared_text: "本文\nhttps://ex.com/p", shared_title: "リンク: https://ex.com/ を含む" },
+    (url) => (url === "https://ex.com/p" ? ok("<title>本当の題</title>") : ok(""))
+  );
+  run(BEFORE, env);
+  assert.equal(JSON.parse(env.vars.post_body).source, '<a href="https://ex.com/p">本当の題</a>');
+});
