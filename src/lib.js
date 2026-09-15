@@ -56,7 +56,7 @@ function decodeEntities(s) {
     var lower = code.toLowerCase();
     if (lower.charAt(0) === "#") {
       var n = lower.charAt(1) === "x" ? parseInt(lower.slice(2), 16) : parseInt(lower.slice(1), 10);
-      return isNaN(n) ? all : String.fromCodePoint(n);
+      return isNaN(n) || n > 0x10ffff ? all : String.fromCodePoint(n);
     }
     return NAMED_ENTITIES.hasOwnProperty(lower) ? NAMED_ENTITIES[lower] : all;
   });
@@ -69,7 +69,7 @@ function extractTitle(html) {
 }
 
 function buildSource(url, title) {
-  if (!url) return "";
+  if (!/^https?:\/\//i.test(url)) return "";
   var label = title || hostOf(url);
   return '<a href="' + escapeHtml(url) + '">' + escapeHtml(label) + "</a>";
 }

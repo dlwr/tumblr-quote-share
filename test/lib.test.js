@@ -126,3 +126,12 @@ test("buildQuoteBody: quote はエスケープし source は生の HTML", () => 
 test("buildQuoteBody: source が空ならキーを含めない", () => {
   assert.deepEqual(buildQuoteBody("a", "", "published"), { type: "quote", quote: "a", state: "published" });
 });
+
+test("extractTitle: 範囲外の数値文字参照はそのまま残し例外を投げない", () => {
+  assert.equal(extractTitle("<title>A &#99999999; B &#x110000; C</title>"), "A &#99999999; B &#x110000; C");
+});
+
+test("buildSource: http(s) 以外の URL はリンクにしない", () => {
+  assert.equal(buildSource("javascript:alert(1)", "t"), "");
+  assert.equal(buildSource("ftp://example.com/a", "t"), "");
+});
