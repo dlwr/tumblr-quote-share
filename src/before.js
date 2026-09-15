@@ -45,7 +45,8 @@ function refreshTokenIfNeeded(pending) {
 }
 
 function resolveTitle(pending) {
-  if (pending.subject) return pending.subject;
+  var subject = usableSubject(pending.subject);
+  if (subject) return subject;
   if (!pending.url) return "";
   var result = sendHttpRequest(stripFragment(pending.url), { method: "GET" });
   return result.status === "success" ? extractTitle(result.response.body) : "";

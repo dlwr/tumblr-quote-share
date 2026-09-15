@@ -68,6 +68,11 @@ function extractTitle(html) {
   return decodeEntities(m[1]).replace(/\s+/g, " ").trim();
 }
 
+function usableSubject(subject) {
+  var s = String(subject || "").trim();
+  return /https?:\/\//i.test(s) ? "" : s;
+}
+
 function buildSource(url, title) {
   if (!/^https?:\/\//i.test(url)) return "";
   var label = title || hostOf(url);
@@ -104,6 +109,7 @@ if (typeof module !== "undefined") {
     hostOf: hostOf,
     extractTitle: extractTitle,
     buildSource: buildSource,
+    usableSubject: usableSubject,
     tokenIsExpired: tokenIsExpired,
     tokenUpdateFromResponse: tokenUpdateFromResponse,
     buildQuoteBody: buildQuoteBody,
