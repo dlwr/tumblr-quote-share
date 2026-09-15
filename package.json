@@ -1,0 +1,13 @@
+{
+  "name": "tumblr-quote-share",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Android の共有シートから選択テキストを Tumblr の quote 投稿にする HTTP Shortcuts 定義",
+  "scripts": {
+    "test": "node --test",
+    "build": "node build.js"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}
