@@ -1,7 +1,7 @@
 "use strict";
 const { test } = require("node:test");
 const assert = require("node:assert/strict");
-const { parseShared } = require("../src/lib.js");
+const { parseShared, escapeHtml, stripFragment, hostOf, extractTitle, buildSource } = require("../src/lib.js");
 
 test("parseShared: Chrome 形式（引用符付き本文 + 改行 + text fragment URL）", () => {
   const text = '"あれま、挨拶もないのかい？"\n\nhttps://sizu.me/suyhnc/posts/kccfz2ur0nt6#:~:text=%E3%81%82%E3%82%8C%E3%81%BE';
@@ -42,4 +42,53 @@ test("parseShared: subject は trim され、null は空文字", () => {
 test("parseShared: 複数行の本文は改行を保つ", () => {
   const r = parseShared('"1行目\n2行目"\nhttps://example.com/', "");
   assert.equal(r.quote, "1行目\n2行目");
+});
+
+test("escapeHtml: 5 文字をエスケープする", () => {
+  assert.equal(escapeHtml(`<a href="x">&'</a>`), "&lt;a href=&quot;x&quot;&gt;&amp;&#39;&lt;/a&gt;");
+});
+
+test("stripFragment: # 以降を落とす", () => {
+  assert.equal(stripFragment("https://example.com/a?b=1#:~:text=x"), "https://example.com/a?b=1");
+  assert.equal(stripFragment("https://example.com/a"), "https://example.com/a");
+});
+
+test("hostOf: ホスト名だけを返す", () => {
+  assert.equal(hostOf("https://www.example.com:8080/x?y#z"), "www.example.com");
+  assert.equal(hostOf("not a url"), "");
+});
+
+test("extractTitle: title を取り出しエンティティを戻し空白を畳む", () => {
+  const html = "<html><head>\n<title>\n  A &amp; B &#x2013; C&#8217;s\n  D\n</title></head><body><title>ignored</title></body></html>";
+  assert.equal(extractTitle(html), "A & B – C’s D");
+});
+
+test("extractTitle: 属性付き title タグと大文字にも対応", () => {
+  assert.equal(extractTitle('<TITLE data-x="1">Hello</TITLE>'), "Hello");
+});
+
+test("extractTitle: title が無ければ空文字", () => {
+  assert.equal(extractTitle("<html></html>"), "");
+});
+
+test("buildSource: タイトルをリンクにする", () => {
+  assert.equal(
+    buildSource("https://sizu.me/p/1#:~:text=a", "08月10日（月）｜静かな生活"),
+    '<a href="https://sizu.me/p/1#:~:text=a">08月10日（月）｜静かな生活</a>'
+  );
+});
+
+test("buildSource: タイトルが無ければホスト名", () => {
+  assert.equal(buildSource("https://sizu.me/p/1", ""), '<a href="https://sizu.me/p/1">sizu.me</a>');
+});
+
+test("buildSource: タイトルと URL をエスケープする", () => {
+  assert.equal(
+    buildSource('https://e.com/?a=1&b="2"', "<b> & co"),
+    '<a href="https://e.com/?a=1&amp;b=&quot;2&quot;">&lt;b&gt; &amp; co</a>'
+  );
+});
+
+test("buildSource: URL が無ければ空文字", () => {
+  assert.equal(buildSource("", "title"), "");
 });
